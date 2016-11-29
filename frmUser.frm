@@ -541,9 +541,10 @@ Private Sub cmdOrder_Click()
     sqlStr = "insert into history (id, telephone, menu_id, method, score, datetime) values (" & Id & ", " & _
         Trim(txtTelephone.Text) & ", '" & Trim(txtMenuId.Text) & "', '" & cmbMethod.Text & "', 0, '" & _
         Format(Now, "YYYY-MM-DD hh:mm:ss") & "')"
-    SQLDML (sqlStr)
+    SQLDML sqlStr
     '餐品购买数加一
     sqlStr = "update menu set total = total + 1 where id = " & Trim(txtMenuId.Text)
+    SQLDML sqlStr
     
     '获得价格
     sqlStr = "select price from menu where id = " & Trim(txtMenuId.Text)
