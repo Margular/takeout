@@ -3,16 +3,89 @@ Object = "{CDE57A40-8B86-11D0-B3C6-00A0C90AEA82}#1.0#0"; "MSDATGRD.OCX"
 Begin VB.Form frmSeller 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "商家管理"
-   ClientHeight    =   6030
+   ClientHeight    =   7020
    ClientLeft      =   45
    ClientTop       =   375
    ClientWidth     =   15930
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   6030
+   ScaleHeight     =   7020
    ScaleWidth      =   15930
    StartUpPosition =   2  '屏幕中心
+   Begin VB.Frame fraHistory 
+      Caption         =   "历史记录"
+      Height          =   3615
+      Left            =   120
+      TabIndex        =   16
+      Top             =   3240
+      Width           =   5775
+      Begin MSDataGridLib.DataGrid grdHistory 
+         Height          =   3255
+         Left            =   120
+         TabIndex        =   17
+         ToolTipText     =   "点击统计相关信息"
+         Top             =   240
+         Width           =   5535
+         _ExtentX        =   9763
+         _ExtentY        =   5741
+         _Version        =   393216
+         HeadLines       =   1
+         RowHeight       =   15
+         BeginProperty HeadFont {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+            Name            =   "宋体"
+            Size            =   9
+            Charset         =   134
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+            Name            =   "宋体"
+            Size            =   9
+            Charset         =   134
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ColumnCount     =   2
+         BeginProperty Column00 
+            DataField       =   ""
+            Caption         =   ""
+            BeginProperty DataFormat {6D835690-900B-11D0-9484-00A0C91110ED} 
+               Type            =   0
+               Format          =   ""
+               HaveTrueFalseNull=   0
+               FirstDayOfWeek  =   0
+               FirstWeekOfYear =   0
+               LCID            =   2052
+               SubFormatType   =   0
+            EndProperty
+         EndProperty
+         BeginProperty Column01 
+            DataField       =   ""
+            Caption         =   ""
+            BeginProperty DataFormat {6D835690-900B-11D0-9484-00A0C91110ED} 
+               Type            =   0
+               Format          =   ""
+               HaveTrueFalseNull=   0
+               FirstDayOfWeek  =   0
+               FirstWeekOfYear =   0
+               LCID            =   2052
+               SubFormatType   =   0
+            EndProperty
+         EndProperty
+         SplitCount      =   1
+         BeginProperty Split0 
+            BeginProperty Column00 
+            EndProperty
+            BeginProperty Column01 
+            EndProperty
+         EndProperty
+      End
+   End
    Begin VB.TextBox txtSellerName 
       Enabled         =   0   'False
       BeginProperty Font 
@@ -49,19 +122,19 @@ Begin VB.Form frmSeller
    End
    Begin VB.Frame fraData 
       Caption         =   "我的菜谱"
-      Height          =   5775
+      Height          =   6735
       Left            =   6000
       TabIndex        =   11
       Top             =   120
       Width           =   9855
       Begin MSDataGridLib.DataGrid grdData 
-         Height          =   5415
+         Height          =   6375
          Left            =   120
          TabIndex        =   12
          Top             =   240
          Width           =   9615
          _ExtentX        =   16960
-         _ExtentY        =   9551
+         _ExtentY        =   11245
          _Version        =   393216
          HeadLines       =   1
          RowHeight       =   15
@@ -371,13 +444,21 @@ Private Sub cmdExit_Click()
 End Sub
 
 Private Sub cmdRefresh_Click()
-    Dim rs As ADODB.Recordset
+    Dim rs, rsHistory As ADODB.Recordset
     Dim sqlStr As String
     
-    sqlStr = "select name as 菜名, price as 价格, type as 餐种, list as 包含, score as 评分, " & _
+    sqlStr = "select id as 菜ID, name as 菜名, price as 价格, type as 餐种, list as 包含, score as 评分, " & _
         "count as 评分人数, total as 订餐人数 from menu where seller_name = '" & CurUserName & "'"
     Set rs = SQLQRY(sqlStr)
     Set grdData.DataSource = rs
+    
+    '设置历史记录
+    sqlStr = "select id as 历史记录ID, menu_id as 菜ID, method as 配餐方式, score as 分数, " & _
+        "datetime as 订餐时间 from history where menu_id in (select id from menu where seller_name = '" & _
+        CurUserName & "')"
+    Set rsHistory = SQLQRY(sqlStr)
+    Set grdHistory.DataSource = rsHistory
+    AutoFitWidth grdHistory
     AutoFitWidth grdData
 End Sub
 
@@ -387,3 +468,29 @@ Private Sub Form_Load()
     cmdRefresh_Click
 End Sub
 
+Private Sub grdHistory_Click()
+    Dim rs As ADODB.Recordset
+    Dim sqlStr As String
+    Dim Yesterday, Today, LastMonth, CurMonth As Integer
+    
+    sqlStr = "select count(*) from history where DATEDIFF(DD, [datetime], GETDATE())=1"
+    Set rs = SQLQRY(sqlStr)
+    Yesterday = rs.Fields(0).Value
+    
+    sqlStr = "select count(*) from history where DATEDIFF(DD, [datetime], GETDATE())=0"
+    Set rs = SQLQRY(sqlStr)
+    Today = rs.Fields(0).Value
+    
+    sqlStr = "select count(*) from history where DATEDIFF(MM, [datetime], GETDATE())=1"
+    Set rs = SQLQRY(sqlStr)
+    LastMonth = rs.Fields(0).Value
+    
+    sqlStr = "select count(*) from history where DATEDIFF(MM, [datetime], GETDATE())=0"
+    Set rs = SQLQRY(sqlStr)
+    CurMonth = rs.Fields(0).Value
+    
+    MsgBox "昨天卖出:" & Yesterday & vbCrLf & _
+            "今天卖出:" & Today & vbCrLf & _
+            "上个月卖出:" & LastMonth & vbCrLf & _
+            "本月卖出:" & CurMonth, vbOKOnly + vbInformation, "提示"
+End Sub
